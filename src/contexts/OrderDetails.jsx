@@ -1,8 +1,11 @@
 import { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { pricePerItem } from '../constants';
 import { formatCurrency } from '../utilities';
+
+// @ts-ignore
 const OrderDetails = createContext();
 
+// create custom hook to check whether we're inside a provider
 export function useOrderDetails() {
   const context = useContext(OrderDetails);
 
@@ -29,9 +32,7 @@ export function OrderDetailsProvider(props) {
     scoops: new Map(),
     toppings: new Map(),
   });
-
   const zeroCurrency = formatCurrency(0);
-
   const [totals, setTotals] = useState({
     scoops: zeroCurrency,
     toppings: zeroCurrency,
@@ -59,7 +60,33 @@ export function OrderDetailsProvider(props) {
 
       setOptionCounts(newOptionCounts);
     }
-    return [{ ...optionCounts, totals }, updateItemCount];
+
+    // alternate updateItemCount that DOES NOT mutate state. Reference Q&A:
+    // function updateItemCount(itemName, newItemCount, optionType) {
+    //   // get option Map and make a copy
+    //   const { optionType: optionMap } = optionCounts;
+    //   const newOptionMap = new Map(optionMap);
+
+    //   // update the copied Map
+    //   newOptionMap.set(itemName, parseInt(newItemCount));
+
+    //   // create new object with the old optionCounts plus new map
+    //   const newOptionCounts = { ...optionCounts };
+    //   newOptionCounts[optionType] = newOptionMap;
+
+    //   // update state
+    //   setOptionCounts(newOptionCounts);
+    // }
+
+    function resetOrder() {
+      setOptionCounts({
+        scoops: new Map(),
+        toppings: new Map(),
+      });
+    }
+    // getter: object containing option counts for scoops and toppings, subtotals and totals
+    // setter: updateOptionCount
+    return [{ ...optionCounts, totals }, updateItemCount, resetOrder];
   }, [optionCounts, totals]);
   return <OrderDetails.Provider value={value} {...props} />;
 }
